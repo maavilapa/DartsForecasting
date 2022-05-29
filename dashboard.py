@@ -4,6 +4,7 @@ import dash
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
+from dash.exceptions import PreventUpdate
 import plotly.io as pio
 import pandas as pd
 #import plotly.express as px
@@ -35,14 +36,14 @@ forecast_horizon = {}
 ###################################
 proyecto = "temperature"
 forecast_horizon[proyecto] = 24
-Q0[proyecto] = pd.read_csv(directory + '\data\raw\historical_data.csv', sep=",")
-Q1[proyecto] = pd.read_csv(directory + '\data\forecasts\ES.csv', sep=",")
-Q2[proyecto] = pd.read_csv(directory + '\data\forecasts\Prophet.csv', sep=",")
-Q3[proyecto] = pd.read_csv(directory + '\data\forecasts\RNN.csv', sep=",")
-Q4[proyecto] = pd.read_csv(directory + '\data\forecasts\TCN.csv', sep=",")
-Q5[proyecto] = pd.read_csv(directory + '\data\forecasts\Transformer.csv', sep=",")
-Q6[proyecto] = pd.read_csv(directory + '\data\forecasts\TFT.csv', sep=",")
-
+Q0[proyecto] = pd.read_csv('data/raw/historical_data.csv', sep=",")
+#Q0[proyecto] = pd.read_csv(r'C:\Users\user\Desktop\GitHub\DartsForecasting\historical_data.csv', sep=",")
+Q1[proyecto] = pd.read_csv('data/forecasts/ES.csv', sep=",")
+Q2[proyecto] = pd.read_csv('data/forecasts/Prophet.csv', sep=",")
+Q3[proyecto] = pd.read_csv('data/forecasts/RNN.csv', sep=",")
+Q4[proyecto] = pd.read_csv('data/forecasts/TCN.csv', sep=",")
+Q5[proyecto] = pd.read_csv('data/forecasts/Transformer.csv', sep=",")
+Q6[proyecto] = pd.read_csv('data/forecasts/TFT.csv', sep=",")
 
 ##########################################################
 def get_options(list_stocks):
@@ -933,24 +934,38 @@ def rmse_general_change(selected_dropdown_value):
 
 
 #Location dropdown CALLBACK
-@app.callback(dash.dependencies.Output('location', 'options'), dash.dependencies.Output('location', 'disabled'),
-              [dash.dependencies.Input('stockselector', 'value')])
+@app.callback(
+    dash.dependencies.Output('location', 'options'),
+    dash.dependencies.Output('location', 'disabled'),
+    [dash.dependencies.Input('stockselector', 'value')])
 def location(selected_project):
-    if "location" in Q0[selected_project].columns:
-        return get_options(Q0[selected_project].location.unique()), False
-    else:
-        return get_options([""]), True
-
+  if "location" in Q0[selected_project].columns:
+    try:
+      return get_options(Q0[selected_project].location.unique()), False
+    except:
+      raise PreventUpdate
+  else:
+    try:  
+      return get_options([""]), True
+    except:
+      raise PreventUpdate
 
 #Item_id dropdown CALLBACK
-@app.callback(dash.dependencies.Output('item_id', 'options'), [dash.dependencies.Input('stockselector', 'value')],
-              [dash.dependencies.Input('location', 'value')])
+@app.callback(
+    dash.dependencies.Output('item_id', 'options'),
+    [dash.dependencies.Input('stockselector', 'value')],
+    [dash.dependencies.Input('location', 'value')])
 def item_id(selected_project, Location):
-    if "location" in Q0[selected_project]:
-        return get_options(Q0[selected_project][Q0[selected_project].location == Location].item_id.unique())
-    else:
-        return get_options(Q0[selected_project].item_id.unique())
-
+  if "location" in Q0[selected_project]:
+    try:
+      return get_options(Q0[selected_project][Q0[selected_project].location==Location].item_id.unique())    
+    except:
+      raise PreventUpdate
+  else:  
+    try:  
+      return get_options(Q0[selected_project].item_id.unique())
+    except:
+      raise PreventUpdate
 
 ########### LAYOUT ########################
 app.layout = html.Div(children=[html.H3(id = 'H3', children = 'Test dashboard Datup', style = {'textAlign': 'center',\
@@ -959,8 +974,6 @@ app.layout = html.Div(children=[html.H3(id = 'H3', children = 'Test dashboard Da
 
                dcc.RadioItems(id='stockselector',
                            options=get_options(["temperature"]),
-                           #multi=False,
-                           #clearable=False,
                            value="temperature",
                            #style={'backgroundColor': 'white'},
                            className='stockselector',
@@ -969,7 +982,7 @@ app.layout = html.Div(children=[html.H3(id = 'H3', children = 'Test dashboard Da
               dcc.Dropdown(id='location',
                            multi=False,
                            clearable=False,
-                           value=Q0["temperature"].item_id.unique()[0],
+                           #value=Q0["temperature"].item_id.unique()[0],
                            #disabled=True,
                            style=dict(
                            width='40%',
@@ -980,7 +993,7 @@ app.layout = html.Div(children=[html.H3(id = 'H3', children = 'Test dashboard Da
               dcc.Dropdown(id='item_id',
                            multi=False,
                            clearable=False,
-                           value=Q0["temperature"].item_id.unique()[0],
+                           #value=Q0["temperature"].item_id.unique()[0],
                            style=dict(
                            width='40%',
                            verticalAlign="middle"
